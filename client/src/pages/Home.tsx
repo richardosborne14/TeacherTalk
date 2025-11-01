@@ -10,6 +10,8 @@ import MatchingGame from '@/components/activities/MatchingGame';
 import FreePractice from '@/components/activities/FreePractice';
 import VoiceRecorder from '@/components/VoiceRecorder';
 import AudioPlayer from '@/components/AudioPlayer';
+import ErrorMessage from '@/components/ErrorMessage';
+import OfflineIndicator from '@/components/OfflineIndicator';
 import { Button } from '@/components/ui/button';
 
 interface Message {
@@ -17,6 +19,7 @@ interface Message {
   text?: string;
   isUser: boolean;
   timestamp: string;
+  isError?: boolean;
   activity?: {
     type: 'fill-in-blank' | 'matching' | 'free-practice';
     data: any;
@@ -31,7 +34,22 @@ export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Detect online/offline status
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -298,6 +316,7 @@ export default function Home() {
 
   return (
     <div className="flex flex-col h-screen bg-background">
+      <OfflineIndicator isOffline={isOffline} />
       <WelcomeHeader />
       <ProgressHeader
         level="B1 - Intermediate"
@@ -314,24 +333,35 @@ export default function Home() {
             <div className="space-y-2 py-4">
               {messages.map((message) => (
                 <div key={message.id}>
-                  {message.text && (
-                    <ChatBubble
-                      message={message.text}
-                      isUser={message.isUser}
-                      timestamp={message.timestamp}
+                  {message.isError ? (
+                    <ErrorMessage
+                      message={message.text || 'Something went wrong. Please try again.'}
+                      onRetry={() => {
+                        setMessages((prev) => prev.filter((m) => m.id !== message.id));
+                      }}
                     />
+                  ) : (
+                    <>
+                      {message.text && (
+                        <ChatBubble
+                          message={message.text}
+                          isUser={message.isUser}
+                          timestamp={message.timestamp}
+                        />
+                      )}
+                      {message.voice && (
+                        <div className={`flex ${message.isUser ? 'justify-end' : 'justify-start'} mb-4`}>
+                          <div className={`max-w-[80%] ${message.isUser ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
+                            <AudioPlayer duration={message.voice.duration} audioUrl={message.voice.audioUrl} />
+                            <span className="text-xs text-muted-foreground px-2" data-testid="text-timestamp">
+                              {message.timestamp}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                      {message.activity && renderActivity(message)}
+                    </>
                   )}
-                  {message.voice && (
-                    <div className={`flex ${message.isUser ? 'justify-end' : 'justify-start'} mb-4`}>
-                      <div className={`max-w-[80%] ${message.isUser ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
-                        <AudioPlayer duration={message.voice.duration} audioUrl={message.voice.audioUrl} />
-                        <span className="text-xs text-muted-foreground px-2" data-testid="text-timestamp">
-                          {message.timestamp}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                  {message.activity && renderActivity(message)}
                 </div>
               ))}
               {isTyping && <TypingIndicator />}
@@ -341,41 +371,78 @@ export default function Home() {
 
           {/* todo: remove mock functionality - Demo buttons */}
           {messages.length > 0 && (
-            <div className="mt-8 p-4 bg-muted/30 rounded-lg border border-border">
-              <p className="text-sm text-muted-foreground mb-3">Demo: Trigger Activities & Voice</p>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => triggerDemoActivity('fill-in-blank')}
-                  data-testid="button-demo-fillblank"
-                >
-                  Fill in Blanks
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => triggerDemoActivity('matching')}
-                  data-testid="button-demo-matching"
-                >
-                  Matching Game
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => triggerDemoActivity('free-practice')}
-                  data-testid="button-demo-practice"
-                >
-                  Free Practice
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setShowVoiceRecorder(true)}
-                  data-testid="button-demo-voice"
-                >
-                  Voice Message
-                </Button>
+            <div className="mt-8 space-y-4">
+              <div className="p-4 bg-muted/30 rounded-lg border border-border">
+                <p className="text-sm text-muted-foreground mb-3">Demo: Activities & Features</p>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => triggerDemoActivity('fill-in-blank')}
+                    data-testid="button-demo-fillblank"
+                  >
+                    Fill in Blanks
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => triggerDemoActivity('matching')}
+                    data-testid="button-demo-matching"
+                  >
+                    Matching Game
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => triggerDemoActivity('free-practice')}
+                    data-testid="button-demo-practice"
+                  >
+                    Free Practice
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setShowVoiceRecorder(true)}
+                    data-testid="button-demo-voice"
+                  >
+                    Voice Message
+                  </Button>
+                </div>
+              </div>
+
+              <div className="p-4 bg-muted/30 rounded-lg border border-border">
+                <p className="text-sm text-muted-foreground mb-3">Demo: Error & Offline States</p>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      const errorMessage: Message = {
+                        id: Date.now().toString(),
+                        text: "Oops! I couldn't process that. Let's try again!",
+                        isUser: false,
+                        timestamp: new Date().toLocaleTimeString('en-US', { 
+                          hour: 'numeric', 
+                          minute: '2-digit',
+                          hour12: true 
+                        }),
+                        isError: true,
+                      };
+                      setMessages((prev) => [...prev, errorMessage]);
+                    }}
+                    data-testid="button-demo-error"
+                  >
+                    Show Error
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setIsOffline(!isOffline)}
+                    data-testid="button-demo-offline"
+                  >
+                    {isOffline ? 'Go Online' : 'Go Offline'}
+                  </Button>
+                </div>
               </div>
             </div>
           )}
