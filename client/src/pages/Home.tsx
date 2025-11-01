@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import WelcomeHeader from '@/components/WelcomeHeader';
+import ProgressHeader from '@/components/ProgressHeader';
 import ChatBubble from '@/components/ChatBubble';
 import TypingIndicator from '@/components/TypingIndicator';
 import ChatInput from '@/components/ChatInput';
@@ -298,6 +299,12 @@ export default function Home() {
   return (
     <div className="flex flex-col h-screen bg-background">
       <WelcomeHeader />
+      <ProgressHeader
+        level="B1 - Intermediate"
+        streak={5}
+        lessonsCompleted={12}
+        earnedBadges={['🚀', '🔥', '📚', '💬', '⭐']}
+      />
       
       <div className="flex-1 overflow-y-auto px-4 pb-4">
         <div className="max-w-3xl mx-auto">
