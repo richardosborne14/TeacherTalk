@@ -7,6 +7,8 @@ import EmptyState from '@/components/EmptyState';
 import FillInBlank from '@/components/activities/FillInBlank';
 import MatchingGame from '@/components/activities/MatchingGame';
 import FreePractice from '@/components/activities/FreePractice';
+import VoiceRecorder from '@/components/VoiceRecorder';
+import AudioPlayer from '@/components/AudioPlayer';
 import { Button } from '@/components/ui/button';
 
 interface Message {
@@ -18,11 +20,16 @@ interface Message {
     type: 'fill-in-blank' | 'matching' | 'free-practice';
     data: any;
   };
+  voice?: {
+    duration: number;
+    audioUrl?: string;
+  };
 }
 
 export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
+  const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -54,6 +61,44 @@ export default function Home() {
       setMessages((prev) => [...prev, aiResponse]);
       setIsTyping(false);
     }, 1500);
+  };
+
+  const handleSendVoice = (audioData: any) => {
+    const voiceMessage: Message = {
+      id: Date.now().toString(),
+      isUser: true,
+      timestamp: new Date().toLocaleTimeString('en-US', { 
+        hour: 'numeric', 
+        minute: '2-digit',
+        hour12: true 
+      }),
+      voice: {
+        duration: audioData.duration,
+      },
+    };
+
+    setMessages((prev) => [...prev, voiceMessage]);
+    setShowVoiceRecorder(false);
+
+    // Simulate AI voice response
+    setIsTyping(true);
+    setTimeout(() => {
+      const aiVoiceResponse: Message = {
+        id: (Date.now() + 1).toString(),
+        text: "Great pronunciation! I can hear you're working on your English. Let me give you some feedback...",
+        isUser: false,
+        timestamp: new Date().toLocaleTimeString('en-US', { 
+          hour: 'numeric', 
+          minute: '2-digit',
+          hour12: true 
+        }),
+        voice: {
+          duration: 12,
+        },
+      };
+      setMessages((prev) => [...prev, aiVoiceResponse]);
+      setIsTyping(false);
+    }, 2000);
   };
 
   // todo: remove mock functionality
@@ -269,6 +314,16 @@ export default function Home() {
                       timestamp={message.timestamp}
                     />
                   )}
+                  {message.voice && (
+                    <div className={`flex ${message.isUser ? 'justify-end' : 'justify-start'} mb-4`}>
+                      <div className={`max-w-[80%] ${message.isUser ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
+                        <AudioPlayer duration={message.voice.duration} audioUrl={message.voice.audioUrl} />
+                        <span className="text-xs text-muted-foreground px-2" data-testid="text-timestamp">
+                          {message.timestamp}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                   {message.activity && renderActivity(message)}
                 </div>
               ))}
@@ -280,7 +335,7 @@ export default function Home() {
           {/* todo: remove mock functionality - Demo buttons */}
           {messages.length > 0 && (
             <div className="mt-8 p-4 bg-muted/30 rounded-lg border border-border">
-              <p className="text-sm text-muted-foreground mb-3">Demo: Trigger Activities</p>
+              <p className="text-sm text-muted-foreground mb-3">Demo: Trigger Activities & Voice</p>
               <div className="flex flex-wrap gap-2">
                 <Button
                   size="sm"
@@ -306,13 +361,32 @@ export default function Home() {
                 >
                   Free Practice
                 </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowVoiceRecorder(true)}
+                  data-testid="button-demo-voice"
+                >
+                  Voice Message
+                </Button>
               </div>
             </div>
           )}
         </div>
       </div>
 
-      <ChatInput onSend={handleSendMessage} disabled={isTyping} />
+      <ChatInput 
+        onSend={handleSendMessage} 
+        onVoiceClick={() => setShowVoiceRecorder(true)}
+        disabled={isTyping} 
+      />
+
+      {showVoiceRecorder && (
+        <VoiceRecorder
+          onSend={handleSendVoice}
+          onCancel={() => setShowVoiceRecorder(false)}
+        />
+      )}
     </div>
   );
 }

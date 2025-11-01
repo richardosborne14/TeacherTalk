@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { HiPaperAirplane } from 'react-icons/hi2';
+import { HiPaperAirplane, HiMicrophone } from 'react-icons/hi2';
 import { motion } from 'framer-motion';
 
 interface ChatInputProps {
   onSend: (message: string) => void;
+  onVoiceClick?: () => void;
   disabled?: boolean;
 }
 
-export default function ChatInput({ onSend, disabled = false }: ChatInputProps) {
+export default function ChatInput({ onSend, onVoiceClick, disabled = false }: ChatInputProps) {
   const [message, setMessage] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -34,6 +35,17 @@ export default function ChatInput({ onSend, disabled = false }: ChatInputProps) 
     >
       <form onSubmit={handleSubmit} className="max-w-3xl mx-auto">
         <div className="flex gap-3 items-end">
+          <Button
+            type="button"
+            size="icon"
+            variant="outline"
+            className="rounded-full h-14 w-14 shadow-sm flex-shrink-0"
+            onClick={onVoiceClick}
+            disabled={disabled}
+            data-testid="button-voice"
+          >
+            <HiMicrophone className="h-5 w-5" />
+          </Button>
           <div className="flex-1 relative">
             <textarea
               value={message}
