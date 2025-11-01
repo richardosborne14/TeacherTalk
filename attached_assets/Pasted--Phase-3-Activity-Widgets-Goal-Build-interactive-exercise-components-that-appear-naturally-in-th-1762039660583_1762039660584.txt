@@ -1,0 +1,102 @@
+📋 Phase 3: Activity Widgets
+Goal: Build interactive exercise components that appear naturally in the chat
+Step 3.1: Create ActivityWrapper Component
+Build /components/ActivityWrapper.jsx:
+
+This is a container that appears as a special message in the chat
+Has a subtle background to distinguish from regular messages
+Shows activity title and instructions
+Contains the specific activity type (fill-in-blank, matching, etc.)
+Has "Submit" button at bottom
+Shows feedback after submission
+
+Styling:
+
+Light background (#F5F5F5)
+Subtle border (not harsh)
+Padding: 16px
+Rounded corners: 12px
+
+Step 3.2: Create FillInBlank Component
+Build /components/activities/FillInBlank.jsx:
+Features:
+
+Displays a sentence with gaps: "I ___ to the store yesterday."
+Input fields for each gap (inline with sentence)
+Submit button
+Shows correct/incorrect feedback with color coding (green checkmark, red X)
+Option to "Try Again" or "See Answer"
+
+Example Data Structure:
+javascriptconst exerciseData = {
+  type: "fill-in-blank",
+  sentence: "I ___ to the store yesterday.",
+  gaps: [
+    { position: 1, correctAnswer: "went", userAnswer: "" }
+  ],
+  hint: "Think about past tense of 'go'"
+}
+Styling:
+
+Input gaps: underlined space within sentence flow
+Width adjusts based on expected answer length
+Focus state: highlight current gap
+Correct: green border, checkmark icon
+Incorrect: red border, X icon
+
+Step 3.3: Create MatchingGame Component
+Build /components/activities/MatchingGame.jsx:
+Features:
+
+Two columns: "Words" and "Definitions"
+Draggable word cards (or click-to-match on mobile)
+Visual connection lines when matched
+Submit button to check all answers
+Color-coded feedback (green for correct pairs, red for incorrect)
+
+Example Data Structure:
+javascriptconst matchingData = {
+  type: "matching",
+  pairs: [
+    { id: 1, word: "ephemeral", definition: "lasting for a very short time" },
+    { id: 2, word: "ubiquitous", definition: "present everywhere" }
+  ]
+}
+Interaction:
+
+Mobile: tap word, tap definition → creates match
+Desktop: drag word to definition OR click-to-match
+Visual feedback: subtle highlight on hover/selection
+Matched pairs: locked together with connecting line
+
+Styling:
+
+Cards: white background, shadow, rounded corners (8px)
+Selected: blue border
+Matched: green border with checkmark
+Incorrect: red border with X
+
+Step 3.4: Create FreePractice Component
+Build /components/activities/FreePractice.jsx:
+Features:
+
+Prompt/question from AI
+Large text area for user response
+Character/word counter
+Submit button
+Display AI feedback as a follow-up message
+
+Example:
+
+Prompt: "Describe your morning routine. Try to use at least 5 different verbs."
+Text area: expandable, minimum 3 lines
+Counter: "45 words" (subtle, bottom-right)
+
+Styling:
+
+Text area: bordered, rounded, padding
+Min height: 100px
+Grows with content
+Focus state: blue border highlight
+
+CHECKPOINT: Test each activity type displays correctly and handles user interaction. Mock the "correct/incorrect" feedback for now.
