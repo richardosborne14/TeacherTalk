@@ -1,0 +1,97 @@
+📋 Phase 7: Mock Data & Integration Prep
+Goal: Make the UI fully functional with mock data, ready for backend integration
+Step 7.1: Create Mock Data
+Build /utils/mockData.js with:
+Mock Conversation:
+javascriptconst mockConversation = [
+  {
+    id: 1,
+    sender: "ai",
+    content: "Hi! I'm so excited to be your English teacher. What brings you here today?",
+    timestamp: "2024-01-15T10:30:00Z"
+  },
+  {
+    id: 2,
+    sender: "user",
+    content: "I need to improve my grammar for work emails.",
+    timestamp: "2024-01-15T10:31:00Z"
+  },
+  // ... more messages
+]
+Mock Activities:
+javascriptconst mockActivities = {
+  fillInBlank: {
+    type: "fill-in-blank",
+    sentence: "I ___ to the office every day by subway.",
+    gaps: [{ position: 1, correctAnswer: "go" }],
+    hint: "Present simple tense"
+  },
+  matching: {
+    type: "matching",
+    pairs: [
+      { id: 1, word: "definitely", definition: "without doubt" },
+      { id: 2, word: "probably", definition: "likely but not certain" }
+    ]
+  }
+}
+Mock Profile:
+javascriptconst mockProfile = {
+  currentLevel: "B1",
+  streak: 5,
+  lessonsCompleted: 12,
+  skills: {
+    listening: { level: "B1", progress: 75 },
+    reading: { level: "A2", progress: 60 },
+    writing: { level: "B1", progress: 40 },
+    speaking: { level: "A2", progress: 80 }
+  },
+  badges: [
+    { id: 1, title: "First Flight", icon: "🚀", earned: true },
+    { id: 2, title: "7-Day Streak", icon: "🔥", earned: true },
+    { id: 3, title: "Grammar Master", icon: "📚", earned: false }
+  ]
+}
+Step 7.2: Create API Mock Functions
+Build /utils/api.js with:
+javascript// Simulate API delay
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+export const sendMessage = async (message) => {
+  await delay(1000); // Simulate network delay
+  // Return mock AI response
+  return {
+    id: Date.now(),
+    sender: "ai",
+    content: "That's a great goal! Let's start by...",
+    timestamp: new Date().toISOString()
+  };
+};
+
+export const submitActivity = async (activityData) => {
+  await delay(800);
+  // Return mock feedback
+  return {
+    correct: true,
+    feedback: "Excellent work! You got it right."
+  };
+};
+
+export const getProfile = async () => {
+  await delay(500);
+  return mockProfile;
+};
+Step 7.3: Wire Up Components
+Connect all components to use mock data:
+
+Chat displays mock conversation on load
+Sending message calls mock API and adds response
+Activities use mock data and feedback
+Progress dashboard shows mock profile data
+
+Prepare for Backend:
+
+Keep API calls in /utils/api.js for easy replacement
+Use clear naming for API endpoints
+Document expected data shapes in comments
+
+CHECKPOINT: The entire UI should function smoothly with mock data. Everything should look and feel complete, just waiting for the real AI backend.

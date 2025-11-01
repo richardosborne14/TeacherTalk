@@ -12,7 +12,10 @@ import VoiceRecorder from '@/components/VoiceRecorder';
 import AudioPlayer from '@/components/AudioPlayer';
 import ErrorMessage from '@/components/ErrorMessage';
 import OfflineIndicator from '@/components/OfflineIndicator';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import { Button } from '@/components/ui/button';
+import * as api from '@/utils/api';
+import type { UserProfile } from '@/utils/api';
 
 interface Message {
   id: string;
@@ -35,7 +38,46 @@ export default function Home() {
   const [isTyping, setIsTyping] = useState(false);
   const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+  const [isLoadingConversation, setIsLoadingConversation] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Load initial data on mount
+  useEffect(() => {
+    const loadInitialData = async () => {
+      try {
+        // Load profile and conversation in parallel
+        const [profileData, conversationData] = await Promise.all([
+          api.getProfile(),
+          api.getConversation(),
+        ]);
+
+        setProfile(profileData);
+        
+        // Convert API messages to component format
+        const formattedMessages: Message[] = conversationData.map((msg) => ({
+          id: msg.id,
+          text: msg.content,
+          isUser: msg.sender === 'user',
+          timestamp: new Date(msg.timestamp).toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true,
+          }),
+        }));
+        
+        setMessages(formattedMessages);
+      } catch (error) {
+        console.error('Failed to load initial data:', error);
+      } finally {
+        setIsLoadingProfile(false);
+        setIsLoadingConversation(false);
+      }
+    };
+
+    loadInitialData();
+  }, []);
 
   // Detect online/offline status
   useEffect(() => {
@@ -59,7 +101,7 @@ export default function Home() {
     scrollToBottom();
   }, [messages, isTyping]);
 
-  const handleSendMessage = (text: string) => {
+  const handleSendMessage = async (text: string) => {
     const userMessage: Message = {
       id: Date.now().toString(),
       text,
@@ -72,17 +114,46 @@ export default function Home() {
     };
 
     setMessages((prev) => [...prev, userMessage]);
-    
-    // Simulate AI response
     setIsTyping(true);
-    setTimeout(() => {
-      const aiResponse = getAIResponse(text, messages.length);
-      setMessages((prev) => [...prev, aiResponse]);
+
+    try {
+      // Call mock API
+      const aiResponse = await api.sendMessage(text);
+      
+      const formattedResponse: Message = {
+        id: aiResponse.id,
+        text: aiResponse.content,
+        isUser: false,
+        timestamp: new Date(aiResponse.timestamp).toLocaleTimeString('en-US', {
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true,
+        }),
+      };
+
+      setMessages((prev) => [...prev, formattedResponse]);
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      
+      // Show error message
+      const errorMessage: Message = {
+        id: Date.now().toString(),
+        text: "Oops! I couldn't process that. Let's try again!",
+        isUser: false,
+        timestamp: new Date().toLocaleTimeString('en-US', {
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true,
+        }),
+        isError: true,
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
       setIsTyping(false);
-    }, 1500);
+    }
   };
 
-  const handleSendVoice = (audioData: any) => {
+  const handleSendVoice = async (audioData: any) => {
     const voiceMessage: Message = {
       id: Date.now().toString(),
       isUser: true,
@@ -98,26 +169,32 @@ export default function Home() {
 
     setMessages((prev) => [...prev, voiceMessage]);
     setShowVoiceRecorder(false);
-
-    // Simulate AI voice response
     setIsTyping(true);
-    setTimeout(() => {
+
+    try {
+      // Call mock API for voice processing
+      const aiResponse = await api.sendVoiceMessage(audioData);
+      
       const aiVoiceResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        text: "Great pronunciation! I can hear you're working on your English. Let me give you some feedback...",
+        id: aiResponse.id,
+        text: aiResponse.content,
         isUser: false,
-        timestamp: new Date().toLocaleTimeString('en-US', { 
-          hour: 'numeric', 
+        timestamp: new Date(aiResponse.timestamp).toLocaleTimeString('en-US', {
+          hour: 'numeric',
           minute: '2-digit',
-          hour12: true 
+          hour12: true,
         }),
         voice: {
           duration: 12,
         },
       };
+      
       setMessages((prev) => [...prev, aiVoiceResponse]);
+    } catch (error) {
+      console.error('Failed to process voice message:', error);
+    } finally {
       setIsTyping(false);
-    }, 2000);
+    }
   };
 
   // todo: remove mock functionality
@@ -318,16 +395,26 @@ export default function Home() {
     <div className="flex flex-col h-screen bg-background">
       <OfflineIndicator isOffline={isOffline} />
       <WelcomeHeader />
-      <ProgressHeader
-        level="B1 - Intermediate"
-        streak={5}
-        lessonsCompleted={12}
-        earnedBadges={['🚀', '🔥', '📚', '💬', '⭐']}
-      />
+      {isLoadingProfile ? (
+        <div className="py-4 flex justify-center">
+          <LoadingSpinner />
+        </div>
+      ) : profile ? (
+        <ProgressHeader
+          level={profile.currentLevel}
+          streak={profile.streak}
+          lessonsCompleted={profile.lessonsCompleted}
+          earnedBadges={profile.badges.filter(b => b.earned).map(b => b.icon)}
+        />
+      ) : null}
       
       <div className="flex-1 overflow-y-auto px-4 pb-4">
         <div className="max-w-3xl mx-auto">
-          {messages.length === 0 ? (
+          {isLoadingConversation ? (
+            <div className="flex justify-center items-center h-full">
+              <LoadingSpinner />
+            </div>
+          ) : messages.length === 0 ? (
             <EmptyState onStarterSelect={handleSendMessage} />
           ) : (
             <div className="space-y-2 py-4">
