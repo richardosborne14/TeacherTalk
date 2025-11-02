@@ -2,6 +2,13 @@
 
 This document outlines what the backend team needs to implement to connect with the frontend.
 
+⚠️ **NOTE:** This document describes the original frontend contract.
+The backend architecture has evolved to v2.0 with additional features.
+
+**For current backend architecture, see:**
+- [ARCHITECTURE_OVERVIEW.md](docs/ARCHITECTURE_OVERVIEW.md)
+- [PROJECT_AUDIT_3.md](docs/PROJECT_AUDIT_3.md)
+
 ---
 
 ## 📋 Overview
