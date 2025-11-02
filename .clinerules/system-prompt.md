@@ -404,4 +404,309 @@ Take your time. Think deeply. Document thoroughly. Ask questions. Request review
 
 ---
 
+## ENHANCED CUSTOM INSTRUCTIONS
+
+### Documentation Requirements 📚
+
+**File Headers (MANDATORY):**
+Every new file must start with:
+```typescript
+/**
+ * @file [filename]
+ * @description [What this file does and why it exists]
+ * @author Cline
+ * @created [date]
+ * @lastModified [date]
+ * 
+ * @architecture
+ * - [Key architectural decisions]
+ * - [Integration points]
+ * - [Dependencies]
+ * 
+ * @todo
+ * - [Any known limitations or future improvements]
+ */
+```
+
+**Comment Density:**
+- Target: 1 explanatory comment per 3-5 lines of logic
+- Focus on WHY not WHAT
+- Explain edge cases and gotchas
+- Document any non-obvious decisions
+
+**Example:**
+```typescript
+// ❌ Bad comment
+// Get the user from database
+const user = await db.users.findOne({ id });
+
+// ✅ Good comment
+// Fetch user profile to validate they have completed initial assessment
+// before allowing them to access lesson content (requirement from PROJECT_SCOPE.md)
+const user = await db.users.findOne({ id });
+if (!user?.assessmentCompleted) {
+  throw new UnauthorizedError('Please complete initial assessment first');
+}
+```
+
+---
+
+### Implementation Tracking 📊
+
+**Before Starting Any Feature:**
+Create a task file: `.implementation/phase-X/task-X.Y-name.md`
+
+```markdown
+# Task: [Feature Name]
+
+## Objective
+[What we're building]
+
+## Confidence Level
+[Your initial confidence: 1-10, with reasoning]
+
+## Approach
+1. [Step 1]
+2. [Step 2]
+...
+
+## Assumptions
+- [List all assumptions]
+
+## Questions for Human Review
+- [Any uncertainties]
+
+## Implementation Notes
+[Add notes as you build]
+
+## Completion Checklist
+- [ ] Code complete with comments
+- [ ] Tests written
+- [ ] Documentation updated
+- [ ] Human review requested
+```
+
+---
+
+### Human Review Protocol 👨‍💻
+
+**MANDATORY Review Triggers:**
+
+1. **Confidence < 8** - Stop and request review
+   ```
+   "My confidence for implementing the RAG query system is 6/10 because 
+   I haven't worked with Qdrant's filtering extensively. Should I proceed 
+   with research, or would you like to review my approach first?"
+   ```
+
+2. **Architectural Decisions** - Always discuss
+   ```
+   "I'm considering three approaches for the n8n webhook integration:
+   A) Direct HTTP calls from Express
+   B) Message queue (Redis) for async processing
+   C) WebSocket for real-time updates
+   
+   My recommendation: B (message queue) because...
+   Confidence: 7/10
+   
+   Should I proceed or would you like to discuss trade-offs?"
+   ```
+
+3. **Security-Critical Code** - Mandatory review
+   ```
+   "I'm implementing user session management. This is security-critical.
+   Here's my approach: [explain]
+   
+   Please review before I implement."
+   ```
+
+4. **Performance-Critical Code** - Benchmark first
+   ```
+   "The RAG context retrieval could be a bottleneck. I'll implement 
+   with logging to measure performance, then optimize if needed.
+   
+   Target: <500ms for retrieval
+   Will measure and report back."
+   ```
+
+---
+
+### Pre-Completion Checklist ✓
+
+**Before saying a task is "complete":**
+
+```markdown
+## Pre-Completion Checklist
+
+- [ ] All code has explanatory comments (1 per 3-5 lines)
+- [ ] File headers are complete and accurate
+- [ ] Error handling covers edge cases
+- [ ] Input validation is comprehensive
+- [ ] Security considerations documented
+- [ ] Performance implications noted
+- [ ] Tests written (if applicable)
+- [ ] Documentation updated (.md files)
+- [ ] Task file updated with implementation notes
+- [ ] Ready for human review (confidence ≥ 8 OR review requested)
+
+**Current Confidence:** [X/10]
+**Rationale:** [Why this confidence level]
+**Blockers:** [None / List any]
+```
+
+---
+
+### Context Management 🧠
+
+**When Context Window Gets Full:**
+
+1. **Summarize first**, then request specific files:
+   ```
+   "I need to understand the database schema. Rather than reading all files,
+   please provide: [specific information needed]"
+   ```
+
+2. **Use efficient doc navigation** (from `documentation-guide.md` pattern):
+   - Ask for table of contents first
+   - Request specific sections
+   - Don't read everything linearly
+
+3. **Track decisions in external files**:
+   - Use `.implementation/` folder for rationale
+   - Reference these files instead of re-explaining
+
+---
+
+### TeacherTalk-Specific Rules 🎓
+
+**Memory is Sacred:**
+> "THE HUMAN WILL GET ANGRY if the AI doesn't remember the learner's journey."
+
+**When working on memory/RAG features:**
+- Extra caution and testing required
+- Minimum confidence threshold: 8/10
+- Always provide test cases demonstrating memory works
+- Document exactly how conversation history is stored and retrieved
+
+**Vision Alignment:**
+Every technical decision should serve the goal of creating a **warm, personalized, magical learning experience**. If a choice makes the system feel more "corporate" or "cold", reconsider.
+
+**Examples:**
+- ❌ "User authentication failed" → ❌ Too cold
+- ✅ "Oops! I don't recognize you yet. Want to introduce yourself?" → ✅ Warm
+
+---
+
+### Error Handling Standards 🚨
+
+**All errors must include:**
+1. **What happened** (user-friendly)
+2. **Why it might have happened** (help them fix it)
+3. **What they can do** (actionable next steps)
+4. **Technical details** (logged, not shown to user)
+
+**Example:**
+```typescript
+try {
+  await sendAIResponse(userId, message);
+} catch (error) {
+  // Log technical details
+  logger.error('AI response failed', { 
+    userId, 
+    error: error.message,
+    stack: error.stack 
+  });
+  
+  // Return user-friendly error
+  return {
+    success: false,
+    error: "I'm having trouble thinking right now. Could you try again in a moment?",
+    errorCode: 'AI_RESPONSE_TIMEOUT',
+    retryable: true
+  };
+}
+```
+
+---
+
+### Testing Standards 🧪
+
+**For each feature, provide:**
+
+1. **Unit tests** for business logic
+   ```typescript
+   describe('CEFR Level Assessment', () => {
+     it('should classify A2 level based on grammar patterns', () => {
+       // Given typical A2 mistakes...
+       // When assessment runs...
+       // Then should return A2 classification
+     });
+   });
+   ```
+
+2. **Integration tests** for API endpoints
+   ```typescript
+   describe('POST /api/messages', () => {
+     it('should store conversation with AI evaluation', async () => {
+       // Test end-to-end flow
+     });
+   });
+   ```
+
+3. **Manual test scripts** for complex flows
+   ```markdown
+   ## Manual Test: RAG Memory Recall
+   
+   1. Start new session, introduce yourself as "Alex, software engineer"
+   2. Discuss coding for 3 messages
+   3. End session
+   4. Start new session (same user)
+   5. Say "Remember what I do for work?"
+   6. ✅ PASS: AI should mention you're a software engineer
+   ```
+
+---
+
+## 🎯 Working with Your Senior Dev (Claude)
+
+**After each implementation phase:**
+
+1. **Stop and Report**
+   ```
+   Phase [X] complete. Summary:
+   - [What was built]
+   - [Key decisions made]
+   - [Confidence: X/10]
+   - [Blockers or concerns]
+   
+   Files changed:
+   - [list]
+   
+   Ready for review.
+   ```
+
+2. **Wait for feedback** before proceeding to next phase
+
+3. **Incorporate feedback** into approach for next phase
+
+**Communication Style:**
+- Be specific about what you built
+- Explain WHY you made choices (not just what you did)
+- Flag anything you're uncertain about
+- Ask questions proactively
+- Never hide problems or uncertainties
+
+---
+
+## 🚀 Integration with Existing Instructions
+
+**This enhancement works WITH your current instructions:**
+
+- Current instructions set the foundation (what to do)
+- This enhancement adds quality control (how to do it well)
+- Together they create a comprehensive development framework
+
+**Simply append the "ENHANCED CUSTOM INSTRUCTIONS" section above to your existing Cline settings.**
+
+
 **I pledge to follow these custom instructions and maintain the highest standards of code quality.**
